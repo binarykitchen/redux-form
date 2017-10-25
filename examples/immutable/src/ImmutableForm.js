@@ -1,27 +1,54 @@
 import React from 'react'
+import Immutable from 'immutable'
 import { Field, reduxForm } from 'redux-form/immutable' // <--- immutable import
 import validate from './validate'
 import warn from './warn'
 
 const renderField = ({
+  rows,
+  componentClass,
   input,
   label,
   type,
   meta: { touched, error, warning }
-}) => (
-  <div>
-    <label>{label}</label>
+}) => {
+  var fieldElement
+
+  if (componentClass === 'textarea') {
+    fieldElement = <textarea {...input} rows={rows} placeholder={label} />
+  } else {
+    fieldElement = <input {...input} type={type} placeholder={label} />
+  }
+
+  return (
     <div>
-      <input {...input} type={type} placeholder={label} />
-      {touched &&
-        ((error && <span>{error}</span>) ||
-          (warning && <span>{warning}</span>))}
+      <label>{label}</label>
+      <div>
+        { fieldElement }
+        {touched &&
+          ((error && <span>{error}</span>) ||
+            (warning && <span>{warning}</span>))}
+      </div>
     </div>
-  </div>
-)
+  )
+}
+
+const formatFavNumbers = (value) => {
+  if (value) {
+    return value.join('\n')
+  } else {
+    return ''
+  }
+}
+
+const normalizeFavNumbers = (value) => {
+  return Immutable.fromJS(value)
+}
+
+const parseFavNumbers = (value) => value.split(/\r\n|\r|\n/)
 
 const ImmutableForm = props => {
-  const { handleSubmit, pristine, reset, submitting } = props
+const { handleSubmit, pristine, reset, submitting } = props
   return (
     <form onSubmit={handleSubmit}>
       <Field
@@ -32,6 +59,16 @@ const ImmutableForm = props => {
       />
       <Field name="email" type="email" component={renderField} label="Email" />
       <Field name="age" type="number" component={renderField} label="Age" />
+      <Field
+        name="fav-numbers"
+        rows={5}
+        component={renderField}
+        componentClass="textarea"
+        label="Favorite numbers"
+        format={formatFavNumbers}
+        normalize={normalizeFavNumbers}
+        parse={parseFavNumbers}
+      />
       <div>
         <button type="submit" disabled={submitting}>
           Submit
@@ -46,6 +83,7 @@ const ImmutableForm = props => {
 
 export default reduxForm({
   form: 'immutableExample', // a unique identifier for this form
+  initialValues: Immutable.fromJS({'age': '19', 'fav-numbers': ['7', '21']}),
   validate,
   warn
 })(ImmutableForm)
